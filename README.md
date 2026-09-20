@@ -106,6 +106,7 @@ Open your browser at **`http://127.0.0.1:8000`** to access the **HireFlow React 
 
 ### Key REST API Endpoints
 - `GET /` — Interactive React Single-Page Application Dashboard.
+- `GET /health` — Health check endpoint for uptime and cloud deployment monitoring.
 - `POST /api/v1/demo/load` — One-click loader for sample dataset (4 candidates + JD).
 - `GET /api/v1/pool` — Retrieve active candidate pool, leaderboard, and tier distribution.
 - `POST /api/v1/screen` — Upload JD and multiple resumes for batch screening.
@@ -116,8 +117,32 @@ Open your browser at **`http://127.0.0.1:8000`** to access the **HireFlow React 
 
 ---
 
+## ☁️ Cloud Deployment (Vercel & Render)
+
+HireFlow is configured for one-click and automated CI/CD deployments to both **Vercel** and **Render**.
+
+### 1. Deploying to Vercel (Serverless Python)
+- **Config:** `vercel.json` and `api/index.py`.
+- Push to GitHub and connect repository to [Vercel](https://vercel.com/new).
+- Set `ANTHROPIC_API_KEY` under Project Environment Variables (optional).
+- Or deploy via CLI: `vercel --prod`.
+
+### 2. Deploying to Render (Web Service / Blueprint)
+- **Config:** `render.yaml` and `Dockerfile`.
+- In [Render Dashboard](https://dashboard.render.com/), create a **Blueprint** or **Web Service**.
+- Build Command: `pip install -r requirements.txt`
+- Start Command: `uvicorn hireflow.api.routes:app --host 0.0.0.0 --port $PORT`
+- Health check path: `/health`
+
+> 📘 For comprehensive step-by-step instructions, see [DEPLOYMENT.md](DEPLOYMENT.md).
+
+---
+
 ## 🧪 Running Unit & Integration Tests
 
 ```bash
-python -m pytest tests/ -v
+# Run test suite
+uv run --extra dev pytest tests/ -v
+# or standard pytest
+pytest tests/ -v
 ```

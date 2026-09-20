@@ -50,10 +50,49 @@ STORE_PROFILES: dict[str, Any] = {}
 STORE_JDS: dict[str, JobDescription] = {}
 
 
+def _resolve_dashboard_path() -> Optional[Path]:
+    """Find dashboard.html across local development, Vercel serverless, and Render containers."""
+    candidates = [
+        Path(__file__).resolve().parent.parent / "static" / "dashboard.html",
+        Path(__file__).resolve().parent.parent.parent / "hireflow" / "static" / "dashboard.html",
+        Path("hireflow/static/dashboard.html"),
+        Path("static/dashboard.html"),
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return None
+
+
+def _resolve_fixture_path(rel_path: str) -> Path:
+    """Resolve fixture file path across differing CWD execution contexts."""
+    candidates = [
+        Path(__file__).resolve().parent.parent.parent / rel_path,
+        Path(rel_path),
+        settings.fixtures_dir / Path(rel_path).name,
+    ]
+    for p in candidates:
+        if p.exists():
+            return p
+    return Path(rel_path)
+
+
 class RawInterviewEvalRequest(BaseModel):
     candidate_id: str
     job_id: Optional[str] = None
     notes_text: str
+
+
+@app.get("/health")
+@app.get("/api/v1/health")
+async def health_check():
+    """Health check endpoint for Render, Vercel, and uptime monitors."""
+    return {
+        "status": "healthy",
+        "service": "hireflow",
+        "version": "1.0.0",
+        "active_candidates": len(STORE_REPORTS),
+    }
 
 
 @app.get("/api/v1/pool")
@@ -80,15 +119,16 @@ async def get_candidate_pool():
 async def load_demo_dataset():
     """One-click loader: ingests 4 test fixture resumes and JD into the runtime store."""
     try:
-        jd_text, _ = DocumentParser.parse_file("fixtures/jd_senior_distributed_systems.md")
+        jd_file = _resolve_fixture_path("fixtures/jd_senior_distributed_systems.md")
+        jd_text, _ = DocumentParser.parse_file(jd_file)
         jd = JobDescriptionExtractor.extract_from_text(jd_text, job_id="job_senior_distributed")
         STORE_JDS[jd.job_id] = jd
 
         resume_files = [
-            ("cand_001", "fixtures/resume_alex_chen.md"),
-            ("cand_002", "fixtures/resume_maya_patel.md"),
-            ("cand_003", "fixtures/resume_jordan_lee.md"),
-            ("cand_004", "fixtures/resume_taylor_smith.md"),
+            ("cand_001", _resolve_fixture_path("fixtures/resume_alex_chen.md")),
+            ("cand_002", _resolve_fixture_path("fixtures/resume_maya_patel.md")),
+            ("cand_003", _resolve_fixture_path("fixtures/resume_jordan_lee.md")),
+            ("cand_004", _resolve_fixture_path("fixtures/resume_taylor_smith.md")),
         ]
 
         reports = []
@@ -267,7 +307,7 @@ async def get_scorecard_html(candidate_id: str):
 @app.get("/dashboard", response_class=HTMLResponse)
 async def serve_dashboard():
     """Serves the complete interactive React + Tailwind CSS single-page application."""
-    dashboard_file = Path("hireflow/static/dashboard.html")
-    if dashboard_file.exists():
+    dashboard_file = _resolve_dashboard_path()
+    if dashboard_file and dashboard_file.exists():
         return dashboard_file.read_text(encoding="utf-8")
     return "<h1>HireFlow API Online. Dashboard file missing.</h1>"

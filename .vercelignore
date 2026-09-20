@@ -1,0 +1,17 @@
+.git
+.gitignore
+.pytest_cache
+.venv
+venv
+env
+tests
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+.DS_Store
+Thumbs.db
+output
+Dockerfile
+.dockerignore
+render.yaml

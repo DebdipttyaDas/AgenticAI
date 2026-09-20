@@ -24,9 +24,14 @@ class Settings(BaseModel):
     career_gap_month_threshold: int = 6
     min_interview_coverage_ratio: float = 75.0
 
-    # Storage Paths
-    output_dir: Path = Path("output")
-    fixtures_dir: Path = Path("fixtures")
+    # Base Directories
+    root_dir: Path = Field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent)
+    fixtures_dir: Path = Field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent / "fixtures" if (Path(__file__).resolve().parent.parent.parent / "fixtures").exists() else Path("fixtures"))
+    output_dir: Path = Field(default_factory=lambda: Path(__file__).resolve().parent.parent.parent / "output" if (Path(__file__).resolve().parent.parent.parent / "output").exists() else Path("output"))
+
+    # Server Settings (for Render / local containers)
+    host: str = Field(default_factory=lambda: os.getenv("HOST", "0.0.0.0"))
+    port: int = Field(default_factory=lambda: int(os.getenv("PORT", "8000")))
 
     # Feature Flags
     anonymize_pii_default: bool = False

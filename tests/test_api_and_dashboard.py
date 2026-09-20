@@ -75,3 +75,28 @@ Interviewer: David Vance
     audit_data = audit_resp.json()
     assert audit_data["candidate_id"] == "cand_002"
     assert audit_data["coverage_ratio"] > 0
+
+
+def test_health_check_endpoints(client):
+    """Verify health check endpoints for Render and Vercel monitoring."""
+    resp1 = client.get("/health")
+    assert resp1.status_code == 200
+    data1 = resp1.json()
+    assert data1["status"] == "healthy"
+    assert data1["service"] == "hireflow"
+
+    resp2 = client.get("/api/v1/health")
+    assert resp2.status_code == 200
+    data2 = resp2.json()
+    assert data2["status"] == "healthy"
+
+
+def test_vercel_entrypoint():
+    """Verify api/index.py loads correctly as an ASGI application."""
+    from api.index import app as vercel_app
+    from fastapi.testclient import TestClient
+
+    vercel_client = TestClient(vercel_app)
+    resp = vercel_client.get("/health")
+    assert resp.status_code == 200
+    assert resp.json()["status"] == "healthy"
